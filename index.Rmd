@@ -1,6 +1,6 @@
 ---
-title: "Making free websites with RStudio's R Markdown"
-author:  "[Julie Lowndes](https://github.com/jules32) at [NCEAS](https://www.nceas.ucsb.edu/), 12/14/16"
+title: "Deep Learning Working Group"
+author:  "[Precision Health and AI Research Lab](https://tarheels.live/kosoroklab/) at [UNC Biostatistics](https://sph.unc.edu/bios/biostatistics/)"
 output:
   html_document:
     fig_width: 1

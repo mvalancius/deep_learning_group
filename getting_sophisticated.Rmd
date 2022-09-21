@@ -164,9 +164,9 @@ source("advanced/my_script.R")
 ## use the calc_gdp() function `my_script.R`
 my_data <- calc_gdp(my_country <- 'Slovenia')
 
-ggplot(data = my_data, aes(x = year, y = pop)) + 
-  geom_point() + 
-  labs(title = my_data$country)
+#ggplot(data = my_data, aes(x = year, y = pop)) + 
+#  geom_point() + 
+#  labs(title = my_data$country)
 ```
 
 <br>
