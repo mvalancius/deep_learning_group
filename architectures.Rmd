@@ -1,0 +1,17 @@
+---
+title: "Architectures"
+---
+
+ 
+
+
+Here, we will include content related to popular DL architectures.
+
+  
+  
+
+
+
+
+
+
