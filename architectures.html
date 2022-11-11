@@ -274,7 +274,71 @@ $(document).ready(function () {
 </div>
 
 
-<p>Here, we will include content related to popular DL architectures.</p>
+<div id="recurrent-neural-networks-rnns" class="section level2">
+<h2>Recurrent Neural Networks (RNNs)</h2>
+<div id="recurrent-neural-networks" class="section level3">
+<h3>Recurrent Neural Networks</h3>
+<p>While the paradigm in which there is a fixed set of variables <span class="math inline">\(x_1,...,x_d\)</span> used to make a prediction for an outcome <span class="math inline">\(y\)</span> of fixed dimension (discrete, continuous, vector, etc.) is the primary focus of classical machine learning, some tasks involve making predictions with or over sequences of (often) dependent data.</p>
+<p>For example, given an audio file containing bird calls, one might want to predict the bird species.</p>
+<p><img src="images/bird_call_prediction.png" /></p>
+<p>Or perhaps, one might want to generate a sequence of musical notes given a starting point.</p>
+<p><img src="images/music_prediction.png" /></p>
+<p>In these examples, the inputs and outputs of a prediction model can be of variable length and are dependent. Recurrent Neural Networks (RNNs) are a special type of architecture designed to address these tasks.</p>
+</div>
+<div id="architecture" class="section level3">
+<h3>Architecture</h3>
+<p><img src="images/rnn_basic.png" /></p>
+<p>Let us first consider a traditional RNN architecture in its “unrolled” depiction. Given a starting hidden state <span class="math inline">\(h^0\)</span> and an input <span class="math inline">\(x^1\)</span>, the network updates to a new hidden state <span class="math inline">\(h_1\)</span> and makes a prediction <span class="math inline">\(\hat{y}^1\)</span>. Then, the hidden state <span class="math inline">\(h_1\)</span> is passed along as input to generate the next hidden state <span class="math inline">\(h_2\)</span>. Written out mathematically, the model is defined recursively:</p>
+<p><span class="math display">\[
+\hat{y}^{(t+1)} = g_y(W_{yh} h^{(t)} + b_{y}) 
+\]</span> where <span class="math display">\[
+h^{(t)} = g_h(W_{hh} h^{(t-1)} + W_{hx} x^{(t)} + b_h).
+\]</span></p>
+<p>From a statistical perspective, the structure of this model assumes that <span class="math inline">\(h^{(t)}\)</span> contains all the information needed from the past to predict <span class="math inline">\(y^{t}\)</span> and future elements in the sequence (a Markov-like property).</p>
+<p>Recurrent neural networks are flexible models, with a traditional neural network actually being just a special case, A few of the more commonly used architectures are displayed below.</p>
+<p><img src="images/rnn_examples.png" /></p>
+</div>
+<div id="optimizing-rnns" class="section level3">
+<h3>Optimizing RNNs</h3>
+<p>While the recurrence relation in RNNs allows for the passing of information from previous states to future states and predictions through the hidden states, a practical downside is that this makes optimization very challenging numerically. For simplicty sake, let us assume write our hidden state as <span class="math inline">\(h^t = g_h(x^t, h^{t-1}, w_h)\)</span> and <span class="math inline">\(\hat{y}^t = g_y(h^t, w_y)\)</span>, where our parameters to learn are <span class="math inline">\(w_h\)</span> and <span class="math inline">\(w_y\)</span>. It can be shown that the gradient of the loss of a RNN for one sequence of data points has the following form:</p>
+<p><span class="math display">\[
+\dfrac{\partial L}{\partial w_h} = \dfrac{1}{T} \sum_{t=1}^T \dfrac{\partial L}{\partial \hat{y}^t} \dfrac{\partial g_y(h^t, w_y)}{\partial h^t} \big[ \dfrac{\partial g_h(x^t, h^{t-1}, w_h)}{\partial w_h} + \sum_{i &lt; t} \big( \prod_{j = i + 1}^t  \dfrac{\partial g_h(x^j, h^{j-1}, w_h)}{\partial h^{j-1}}\big) \dfrac{\partial g_h(x^i, h^{i-1}, w_h)}{\partial w_h} \big]
+\]</span></p>
+<p>The term <span class="math inline">\(\prod_{j = i + 1}^t \dfrac{\partial g_h(x^j, h^{j-1}, w_h)}{\partial h^{j-1}}\)</span> involves the product of up to <span class="math inline">\(T\)</span> matrices. For long sequences, this is numerically unstable, which can lead to a phenomena called exploding or vanishing gradients. Practical remedies to this include gradient clipping (thresholding the norm of the gradient at a certain large value) or truncating the number of products.</p>
+</div>
+<div id="lstms" class="section level3">
+<h3>LSTMs</h3>
+<p>Example from this blog (<a href="https://colah.github.io/posts/2015-08-Understanding-LSTMs/" class="uri">https://colah.github.io/posts/2015-08-Understanding-LSTMs/</a>).</p>
+<p>LSTMs are a special kind of recurrent neural network designed to learn long-term dependencies in the data. We know RNN’s are used to handle sequential data, and can handle some sense of dependence on previous (sequential or temporal data). However, problems arise when the dependence occurs too far in the past (causing vanishing gradients).</p>
+<p>Take for example the sentence “the clouds are in the sky.” The word “sky” can be inferred from “clouds” earlier in the sentence, but what if the sentence was “I grew up in France…” Followed by a few sentences, and then “I speak French.” It would be difficult for a traditional RNN to draw on this previous information that far back. LSTMs were designed to solve this “long-term” dependency problem, in which “remembering” information for long periods is the default.</p>
+<p><img src="images/rnn_comparison.png" /></p>
+<p>Above is an example of a “short-term” dependency that RNN’s were designed to handle. However, here is a second example of a “long-term” dependency that traditional RNN’s fail to pick up on.</p>
+<p><img src="images/long_term.png" /></p>
+<p>LSTM’s add an internal state (cell) to an RNN node, in addition to the input, as well as receiving the output as input. The cell consists of a forget gate, input gate, and an output gate (total of 3). Forget says the information in the internal state can be forgotten, input gate says what new input should be added, and output defines which parts of the state should be output (values can be assigned to each gate between 0-1, where 0 is completely closed). Now we look at a walkthrough of this with images below taken from (<a href="https://towardsdatascience.com/lstm-recurrent-neural-networks-how-to-teach-a-network-to-remember-the-past-55e54c2ff22e" class="uri">https://towardsdatascience.com/lstm-recurrent-neural-networks-how-to-teach-a-network-to-remember-the-past-55e54c2ff22e</a>).</p>
+</div>
+<div id="walkthrough" class="section level3">
+<h3>Walkthrough:</h3>
+<p><img src="images/lstm_architecture.png" /></p>
+<p>Above is an example of a basic RNN where the hidden nodes are recurrent units. Zooming in on one of the recurrent units:</p>
+<p><img src="images/recurrent_unit.png" /></p>
+<p>It can be seen that <span class="math inline">\(h_{t-1}\)</span>, the hidden state from a previous time step, is fed back into the node along with the input at the current timestep <span class="math inline">\(x_t\)</span> as is in a traditional RNN. In the LSTM model, this is still true, but we add a new hidden state into the node, along with the three forget, input, and output gates.</p>
+<p><img src="images/ltsm_unit.png" /></p>
+<p>The sigmoid activation functions set a weight of [0,1] to the input and output candidates, which are ultimately combined and passed to determine the new hidden state and output. It can be seen the hidden state from previous timestep <span class="math inline">\(h_{t-1}\)</span> is combined with the input at the current time step <span class="math inline">\(x_t\)</span> as in an RNN, but this data is then fed into the forget and input gates to modify the cell state from <span class="math inline">\(c_{t-1}\)</span> to a new present cell state <span class="math inline">\(c_{t}\)</span>, meanwhile the output gate determines what is fed back into the network.</p>
+</div>
+<div id="grus" class="section level3">
+<h3>GRUs</h3>
+<p>A gated recurrent unit (GRU) functions similarly to an LSTM, only instead of the three gates in LSTM (forget, input, output), these are replaced by just two (reset, update). These gates similarly have sigmoid activation functions setting the values between [0,1]. The reset gate can be thought of as how much of the previous state should be retained, meanwhile the update gate controls how much of current state is copied to the new state. Images taken from (<a href="https://d2l.ai/chapter_recurrent-modern/gru.html" class="uri">https://d2l.ai/chapter_recurrent-modern/gru.html</a>).</p>
+<p><img src="images/reset_gate.png" /></p>
+<p><img src="images/reset_gate2.png" /></p>
+<p>Intuitively, reset gates help capture short-term dependencies, while update gates help capture long-term dependencies.</p>
+<div id="references" class="section level4">
+<h4>References</h4>
+<p>Much of these notes were adapted from the following excellent resources:</p>
+<p><a href="https://d2l.ai/chapter_recurrent-modern/gru.html" class="uri">https://d2l.ai/chapter_recurrent-modern/gru.html</a></p>
+<p><a href="https://stanford.edu/~shervine/teaching/cs-230/cheatsheet-recurrent-neural-networks" class="uri">https://stanford.edu/~shervine/teaching/cs-230/cheatsheet-recurrent-neural-networks</a></p>
+</div>
+</div>
+</div>
 
 
 
