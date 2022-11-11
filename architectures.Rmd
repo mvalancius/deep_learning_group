@@ -119,7 +119,88 @@ https://d2l.ai/chapter_recurrent-modern/gru.html
 
 https://stanford.edu/~shervine/teaching/cs-230/cheatsheet-recurrent-neural-networks
 
-  
+
+
+
+## Autoencoders
+
+
+### Introduction
+
+An autoencoder is a neural network (with input, hidden/bottleneck, and output layer) which attempts to copy the input, as closely as possible, to the output. This falls into a category of **unsupervised representation learning**, as the bottleneck layer forces a lower-dimensional representation of the original input. This framework can handle data which has structure amongst its features (e.g. time-correlated data, images, etc.). If the output layer is a good reconstruction of the input layer, the hidden layer may be an adequate compressed-knowledge representation.
+
+Let $g$ take the input, $X$, to the hidden layer (so $g(X)$ represents the hidden layer/latent space), and let $r$ take the hidden layer to the output (so $r\{ g(X) \}$ represents the output layer). 
+
+```{r, echo=FALSE, fig.align = 'center', out.width = "50%", fig.cap = "An undercomplete autoencoder."}
+knitr::include_graphics("images/undercomplete.png")
+```
+
+### Motivating Example
+
+Data from continuous glucose monitoring (CGM) in diabetes consists of a blood glucose reading every few minutes for periods of time which can span months. This data is thus hyperstructured over time, with complex relationships and time correlations, from which features must be extracted in order to be useful for prediction or decision-making analysis pipelines.
+
+Many human-engineered features are known to have clinical and analytical value: time in hypoglycemia (proportion of readings with blood sugar < 70 mg/dL), glucose coefficient of variation (a measure of volatility of blood sugar readings), etc. However, if only these known, summary features are extracted from CGM data, various potentially useful parts of CGM trajectories may be wasted. Reconstructing CGM trajectories through a neural network architecture consisting of a hidden middle layer may pave a path for going beyond human-engineered features and computationally discovering relevant features from such complex data.
+
+```{r, echo=FALSE, fig.align = 'center', out.width = "50%", fig.cap = "An example of a portion of a CGM data trajectory, depicted in Prendin et al. (2021)."}
+knitr::include_graphics("images/cgm.png")
+```
+
+### Types of Autoencoders
+
+There are a variety of different autoencoders, which serve different purposes. We discuss a few types here.
+
+#### Undercomplete Autoencoder
+
+This is the most intuitive version of an autoencoder. Directly copying the input to the output has no value, so we insert a hidden layer with smaller dimension than the input layer - this is the definition of an undercomplete autoencoder. This forces the autoencoder to prioritize and capture the most representative features of the input data in reconstruction of the output.
+
+From this architecture, the learning process strives to minimize the loss function, $L[X, r\{ g(X) \}]$. $L$ penalizes the dissimilarity between $X$ and $r\{ g(X) \}$ (such as MSE).
+
+#### Regularized Autoencoder {#regularized}
+
+In the undercomplete setting, the idea is that the autoencoder learns useful representations because: (1) The encoder, $g$, and decoder, $r$, are kept shallow, and (2) The size of the hidden layer is kept small. 
+
+Regularized autoencoders provide useful representations through another method: A loss function which encourages that the model has other properties in addition to simply copying input to output (e.g. sparsity of representation, robustness to noise, etc.). Specifically, a sparse autoencoder minimizes $L[X, r\{ g(X) \}] + \lambda\{g(X)\}$, where $\lambda\{g(X)\}$ is a sparsity penalty on the hidden layer, and a denoising autoencoder minimizes $L[X, r\{ g(\tilde{X}) \}]$, where $\tilde{X}$ is a corrupted/noisy version of $X$.
+
+Therefore, a regularized autoencoder does not necessarily need to be undercomplete. Whereas as undercomplete autoencoder model learns useful representations by through constraints in the neural network architecture, a regularized autoencoder learns useful representations through constrains on the model imposed by the loss function.
+
+#### Variational Autoencoder
+
+An autoencoder, in its standard implementation, is not generative. That is, the latent space is not organized in such a way that a random extrapolation point in the space will map to an output that makes sense. In order to use the latent space of the autoencoder for generative purposes, it needs to be "regular" enough.
+
+A variational autoencoder (VAE) builds the latent space in a probabilistic manner (each latent state attribute is a probability distribution), so that even parts of the space outside of the range of observed data can map to new outputs in a reasonable manner.
+
+The following figure depicts a VAE which turns discrete molecules into a continuous latent space representation. At the same time, the optimizer moves through the latent space to find new molecules which are estimated to maximize the values of certain properties of interest. 
+
+```{r, echo=FALSE, fig.align = 'center', out.width = "50%", fig.cap = "VAE architecture used in Gomez-Bombarelli et al. (2018)."}
+knitr::include_graphics("images/vae.png")
+```
+
+### Challenges
+
+#### Imperfect Decoding Threshold
+
+It may appear arbitrary to decide what testing MSE constitutes a "good" autoencoder from which the hidden layer can be used as new features, especially when the input is extremely high-dimensional. Determining acceptable levels of decoding error may also depend on the application and risk tolerance.
+
+#### Finding the Right Architecture
+
+A bottleneck layer that is too narrow may result in algorithms that miss important dimensions of the input data. On the other hand, an overly generous bottleneck layer may result in the input being more-or-less copied and pasted to the output through the middle layer (overfitting), rather than learning a low-dimensional representation with key features. Introducing loss regularization techniques, such as those in Section 3.2, may help with this issue.
+
+#### Insufficient Data
+
+Since autoencoders are unsupervised and learn from the input data directly (rather than human-created labels), they often require a considerable amount of clean data. It may be difficult to determine the required amount of data.
+
+### References
+
+* Altosaar, Jaan. (2016). Tutorial - What is a Variational Autoencoder?. Zenodo. <https://doi.org/10.5281/zenodo.4462916>
+* Dertat, A. (2017). Applied Deep Learning - Part 3: Autoencoders. Towards Data Science. <https://towardsdatascience.com/applied-deep-learning-part-3-autoencoders-1c083af4d798>
+* Doersch, C. (2016). Tutorial on variational autoencoders. arXiv preprint arXiv:1606.05908.
+* Gómez-Bombarelli, R., Wei, J. N., Duvenaud, D., Hernández-Lobato, J. M., Sánchez-Lengeling, B., Sheberla, D., Aguilera-Iparraguirre, J., Hirzel, T.D., Adams, R.P., & Aspuru-Guzik, A. (2018). Automatic chemical design using a data-driven continuous representation of molecules. ACS central science, 4(2), 268-276.
+* Goodfellow, I., Bengio, Y., & Courville, A. (2016). Deep learning. MIT press.
+* Jordan, J. (2018). Introduction to autoencoders. <https://www.jeremyjordan.me/autoencoders/>
+* Jordan, J. (2018). Variational autoencoders. <https://www.jeremyjordan.me/variational-autoencoders/>
+* Lawton, G. (2020). How to troubleshoot 8 common autoencoder limitations. TechTarget. <https://www.techtarget.com/searchenterpriseai/feature/How-to-troubleshoot-8-common-autoencoder-limitations>
+* Prendin, F., Del Favero, S., Vettoretti, M., Sparacino, G., & Facchinetti, A. (2021). Forecasting of glucose levels and hypoglycemic events: head-to-head comparison of linear and nonlinear data-driven algorithms based on continuous glucose monitoring data only. Sensors, 21(5), 1647.
+* Rocca, J. (2019). Understanding Variational Autoencoders (VAEs). Towards Data Science. <https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73>
   
 
 

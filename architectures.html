@@ -339,6 +339,88 @@ h^{(t)} = g_h(W_{hh} h^{(t-1)} + W_{hx} x^{(t)} + b_h).
 </div>
 </div>
 </div>
+<div id="autoencoders" class="section level2">
+<h2>Autoencoders</h2>
+<div id="introduction" class="section level3">
+<h3>Introduction</h3>
+<p>An autoencoder is a neural network (with input, hidden/bottleneck, and output layer) which attempts to copy the input, as closely as possible, to the output. This falls into a category of <strong>unsupervised representation learning</strong>, as the bottleneck layer forces a lower-dimensional representation of the original input. This framework can handle data which has structure amongst its features (e.g. time-correlated data, images, etc.). If the output layer is a good reconstruction of the input layer, the hidden layer may be an adequate compressed-knowledge representation.</p>
+<p>Let <span class="math inline">\(g\)</span> take the input, <span class="math inline">\(X\)</span>, to the hidden layer (so <span class="math inline">\(g(X)\)</span> represents the hidden layer/latent space), and let <span class="math inline">\(r\)</span> take the hidden layer to the output (so <span class="math inline">\(r\{ g(X) \}\)</span> represents the output layer).</p>
+<div class="figure" style="text-align: center">
+<img src="images/undercomplete.png" alt="An undercomplete autoencoder." width="50%" />
+<p class="caption">
+An undercomplete autoencoder.
+</p>
+</div>
+</div>
+<div id="motivating-example" class="section level3">
+<h3>Motivating Example</h3>
+<p>Data from continuous glucose monitoring (CGM) in diabetes consists of a blood glucose reading every few minutes for periods of time which can span months. This data is thus hyperstructured over time, with complex relationships and time correlations, from which features must be extracted in order to be useful for prediction or decision-making analysis pipelines.</p>
+<p>Many human-engineered features are known to have clinical and analytical value: time in hypoglycemia (proportion of readings with blood sugar &lt; 70 mg/dL), glucose coefficient of variation (a measure of volatility of blood sugar readings), etc. However, if only these known, summary features are extracted from CGM data, various potentially useful parts of CGM trajectories may be wasted. Reconstructing CGM trajectories through a neural network architecture consisting of a hidden middle layer may pave a path for going beyond human-engineered features and computationally discovering relevant features from such complex data.</p>
+<div class="figure" style="text-align: center">
+<img src="images/cgm.png" alt="An example of a portion of a CGM data trajectory, depicted in Prendin et al. (2021)." width="50%" />
+<p class="caption">
+An example of a portion of a CGM data trajectory, depicted in Prendin et al. (2021).
+</p>
+</div>
+</div>
+<div id="types-of-autoencoders" class="section level3">
+<h3>Types of Autoencoders</h3>
+<p>There are a variety of different autoencoders, which serve different purposes. We discuss a few types here.</p>
+<div id="undercomplete-autoencoder" class="section level4">
+<h4>Undercomplete Autoencoder</h4>
+<p>This is the most intuitive version of an autoencoder. Directly copying the input to the output has no value, so we insert a hidden layer with smaller dimension than the input layer - this is the definition of an undercomplete autoencoder. This forces the autoencoder to prioritize and capture the most representative features of the input data in reconstruction of the output.</p>
+<p>From this architecture, the learning process strives to minimize the loss function, <span class="math inline">\(L[X, r\{ g(X) \}]\)</span>. <span class="math inline">\(L\)</span> penalizes the dissimilarity between <span class="math inline">\(X\)</span> and <span class="math inline">\(r\{ g(X) \}\)</span> (such as MSE).</p>
+</div>
+<div id="regularized" class="section level4">
+<h4>Regularized Autoencoder</h4>
+<p>In the undercomplete setting, the idea is that the autoencoder learns useful representations because: (1) The encoder, <span class="math inline">\(g\)</span>, and decoder, <span class="math inline">\(r\)</span>, are kept shallow, and (2) The size of the hidden layer is kept small.</p>
+<p>Regularized autoencoders provide useful representations through another method: A loss function which encourages that the model has other properties in addition to simply copying input to output (e.g. sparsity of representation, robustness to noise, etc.). Specifically, a sparse autoencoder minimizes <span class="math inline">\(L[X, r\{ g(X) \}] + \lambda\{g(X)\}\)</span>, where <span class="math inline">\(\lambda\{g(X)\}\)</span> is a sparsity penalty on the hidden layer, and a denoising autoencoder minimizes <span class="math inline">\(L[X, r\{ g(\tilde{X}) \}]\)</span>, where <span class="math inline">\(\tilde{X}\)</span> is a corrupted/noisy version of <span class="math inline">\(X\)</span>.</p>
+<p>Therefore, a regularized autoencoder does not necessarily need to be undercomplete. Whereas as undercomplete autoencoder model learns useful representations by through constraints in the neural network architecture, a regularized autoencoder learns useful representations through constrains on the model imposed by the loss function.</p>
+</div>
+<div id="variational-autoencoder" class="section level4">
+<h4>Variational Autoencoder</h4>
+<p>An autoencoder, in its standard implementation, is not generative. That is, the latent space is not organized in such a way that a random extrapolation point in the space will map to an output that makes sense. In order to use the latent space of the autoencoder for generative purposes, it needs to be “regular” enough.</p>
+<p>A variational autoencoder (VAE) builds the latent space in a probabilistic manner (each latent state attribute is a probability distribution), so that even parts of the space outside of the range of observed data can map to new outputs in a reasonable manner.</p>
+<p>The following figure depicts a VAE which turns discrete molecules into a continuous latent space representation. At the same time, the optimizer moves through the latent space to find new molecules which are estimated to maximize the values of certain properties of interest.</p>
+<div class="figure" style="text-align: center">
+<img src="images/vae.png" alt="VAE architecture used in Gomez-Bombarelli et al. (2018)." width="50%" />
+<p class="caption">
+VAE architecture used in Gomez-Bombarelli et al. (2018).
+</p>
+</div>
+</div>
+</div>
+<div id="challenges" class="section level3">
+<h3>Challenges</h3>
+<div id="imperfect-decoding-threshold" class="section level4">
+<h4>Imperfect Decoding Threshold</h4>
+<p>It may appear arbitrary to decide what testing MSE constitutes a “good” autoencoder from which the hidden layer can be used as new features, especially when the input is extremely high-dimensional. Determining acceptable levels of decoding error may also depend on the application and risk tolerance.</p>
+</div>
+<div id="finding-the-right-architecture" class="section level4">
+<h4>Finding the Right Architecture</h4>
+<p>A bottleneck layer that is too narrow may result in algorithms that miss important dimensions of the input data. On the other hand, an overly generous bottleneck layer may result in the input being more-or-less copied and pasted to the output through the middle layer (overfitting), rather than learning a low-dimensional representation with key features. Introducing loss regularization techniques, such as those in Section 3.2, may help with this issue.</p>
+</div>
+<div id="insufficient-data" class="section level4">
+<h4>Insufficient Data</h4>
+<p>Since autoencoders are unsupervised and learn from the input data directly (rather than human-created labels), they often require a considerable amount of clean data. It may be difficult to determine the required amount of data.</p>
+</div>
+</div>
+<div id="references-1" class="section level3">
+<h3>References</h3>
+<ul>
+<li>Altosaar, Jaan. (2016). Tutorial - What is a Variational Autoencoder?. Zenodo. <a href="https://doi.org/10.5281/zenodo.4462916" class="uri">https://doi.org/10.5281/zenodo.4462916</a></li>
+<li>Dertat, A. (2017). Applied Deep Learning - Part 3: Autoencoders. Towards Data Science. <a href="https://towardsdatascience.com/applied-deep-learning-part-3-autoencoders-1c083af4d798" class="uri">https://towardsdatascience.com/applied-deep-learning-part-3-autoencoders-1c083af4d798</a></li>
+<li>Doersch, C. (2016). Tutorial on variational autoencoders. arXiv preprint arXiv:1606.05908.</li>
+<li>Gómez-Bombarelli, R., Wei, J. N., Duvenaud, D., Hernández-Lobato, J. M., Sánchez-Lengeling, B., Sheberla, D., Aguilera-Iparraguirre, J., Hirzel, T.D., Adams, R.P., &amp; Aspuru-Guzik, A. (2018). Automatic chemical design using a data-driven continuous representation of molecules. ACS central science, 4(2), 268-276.</li>
+<li>Goodfellow, I., Bengio, Y., &amp; Courville, A. (2016). Deep learning. MIT press.</li>
+<li>Jordan, J. (2018). Introduction to autoencoders. <a href="https://www.jeremyjordan.me/autoencoders/" class="uri">https://www.jeremyjordan.me/autoencoders/</a></li>
+<li>Jordan, J. (2018). Variational autoencoders. <a href="https://www.jeremyjordan.me/variational-autoencoders/" class="uri">https://www.jeremyjordan.me/variational-autoencoders/</a></li>
+<li>Lawton, G. (2020). How to troubleshoot 8 common autoencoder limitations. TechTarget. <a href="https://www.techtarget.com/searchenterpriseai/feature/How-to-troubleshoot-8-common-autoencoder-limitations" class="uri">https://www.techtarget.com/searchenterpriseai/feature/How-to-troubleshoot-8-common-autoencoder-limitations</a></li>
+<li>Prendin, F., Del Favero, S., Vettoretti, M., Sparacino, G., &amp; Facchinetti, A. (2021). Forecasting of glucose levels and hypoglycemic events: head-to-head comparison of linear and nonlinear data-driven algorithms based on continuous glucose monitoring data only. Sensors, 21(5), 1647.</li>
+<li>Rocca, J. (2019). Understanding Variational Autoencoders (VAEs). Towards Data Science. <a href="https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73" class="uri">https://towardsdatascience.com/understanding-variational-autoencoders-vaes-f70510919f73</a></li>
+</ul>
+</div>
+</div>
 
 
 
